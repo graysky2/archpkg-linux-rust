@@ -1,7 +1,7 @@
 # Maintainer: Raphael Nestler (rnestler) <raphael.nestler@gmail.com>
 
 pkgbase=linux-rust
-pkgver=6.9.9.arch1
+pkgver=6.10.10.arch1
 pkgrel=1
 pkgdesc='Rust Linux'
 url='https://github.com/archlinux/linux'
@@ -30,10 +30,12 @@ makedepends=(
 options=('!strip')
 _srcname=linux-${pkgver%.*}
 _srctag=v${pkgver%.*}-${pkgver##*.}
+_gcc_more_v=20240916
 source=(
   https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.{xz,sign}
   $url/releases/download/$_srctag/linux-$_srctag.patch.zst{,.sig}
   config  # the main kernel config file
+  "more-uarches-$_gcc_more_v.tar.gz::https://github.com/graysky2/kernel_compiler_patch/archive/$_gcc_more_v.tar.gz"
 )
 validpgpkeys=(
   ABAF11C65A2970B130ABE3C479BE3E4300411886  # Linus Torvalds
@@ -41,16 +43,18 @@ validpgpkeys=(
   83BC8889351B5DEBBB68416EB8AC08600F108CDF  # Jan Alexander Steffens (heftig)
 )
 # https://www.kernel.org/pub/linux/kernel/v6.x/sha256sums.asc
-sha256sums=('2be05b487eb239a3bf687d628a8f104177d09c310f00bcc2a5e50f1733421eb9'
+sha256sums=('e687e735b5eb9efb6d67b42433c93fc9118106a995514f062652873b5e809bcd'
             'SKIP'
-            '69be8bdce434da002fc46c92098754a967306675899c003f11c75d574c84e3c5'
+            '064b9841dd6738e8a6f8859743c66e0d603541b6afa021ab98ea7e3623fca108'
             'SKIP'
-            'e69aef834d9e612ae1229112105edf394d48417e690619430a8a9cdc9f291788')
-b2sums=('a228397902894f566d49adef24e4d44271893173cf0c58e8eb6006137dfb870b5f3aea17cadc775988a0682ba4a5261ebd3f10689b6c096f762cc8af666c56ff'
+            '39235298f3b941d3587ebb265d6b1ea2e41b37feedc33c93ed7a1742d5c026d3'
+            '08ebcea1c711bd814dcd7029987e0de12326612020edcea145af77190f4ded0d')
+b2sums=('8a15910089d080886046b1fd8d57ef28ce872bf428e67ccbc9d5ca92da794d6dee7ab83cc914a499b40962e2990c3b1e5b11ae7d12c1eff7bec548c9a67df03a'
         'SKIP'
-        'b115ea5f1d8fcd5f5fef5b443eea86e69541ceabf747fa851bb2b18b7b8ab2d4fea7f31aeba367bfa742fcb5df4725a4296bac83fcef22717a496122d649ca03'
+        '06b8f21c167f3376a62f9bd0d3e0275a4ba32736aaa5d7fb94a07e99445186ab8f9426468d33c00fd43c52c52ffdb3ee77e6802db0781ffad6b8d74cdc4951a1'
         'SKIP'
-        '237c8e17be1bfc89b3106ebc94028793fe8100762c440f047d86c53785ef000277019b23d85f8b52088d0ce6a1b25c1ba38cab408e7d6d9e928819ee0a0b33db')
+        'e50245bfb3688ee8bdd98a081bd40d8a192ee3cba72a32e470eab56a23ee2f0b801990ad1ab59875a0d49e3967cbf06542fff15ee78ea2cb5b0dbc0a432ee8c9'
+        '77ada03d4a7953fb8abc5632f56aa22d187ad16c58c21c5f5662db24eb70846c4e9de8795c577aae28e34d89fc10be8486e6fdf79d143e2a1b622c9a50a6b1e0')
 
 export KBUILD_BUILD_HOST=archlinux
 export KBUILD_BUILD_USER=$pkgbase
@@ -73,11 +77,14 @@ prepare() {
     patch -Np1 < "../$src"
   done
 
+  echo "Applying patch lite-more-uarches-for-kernel-6.8-rc4+.patch"
+  patch -p1 -i ../kernel_compiler_patch-$_gcc_more_v/lite-more-uarches-for-kernel-6.8-rc4+.patch
+
   echo "Installing rust-src"
   rustup component add rust-src
 
   echo "Installing rust-bindgen"
-  cargo install --locked --version 0.65.1 bindgen-cli
+  cargo install --locked --version 0.70.1 bindgen-cli
 
   echo "Verifying that Rust support is available"
   make LLVM=1 rustavailable
